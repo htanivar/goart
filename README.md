@@ -6,7 +6,7 @@ General Utils Package for utils
     git branch -M develop
     git tag v0.0.1 
     git push origin v0.0.1
-    go get github.com/htanivar/goart
+    go get github.com/htanivar/goart@v0.0.1
 
 
 Execute all tests
