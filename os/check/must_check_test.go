@@ -2,42 +2,92 @@ package check
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestMustExists(t *testing.T) {
-	// Create a temp directory
 	dir := t.TempDir()
 
-	// Directory should exist
-	if !MustExists(dir) {
-		t.Errorf("Expected temp directory %s to exist", dir)
+	// Create a file inside temp dir
+	file := filepath.Join(dir, "file.txt")
+	if err := os.WriteFile(file, []byte("content"), 0644); err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
 	}
 
-	// Non-existent path should not exist
-	nonExistent := dir + "/doesnotexist"
-	if MustExists(nonExistent) {
-		t.Errorf("Expected non-existent path %s to NOT exist", nonExistent)
+	nonExistent := filepath.Join(dir, "doesnotexist")
+
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+	}{
+		{
+			name:    "directory exists",
+			path:    dir,
+			wantErr: false,
+		},
+		{
+			name:    "file exists",
+			path:    file,
+			wantErr: false,
+		},
+		{
+			name:    "path does not exist",
+			path:    nonExistent,
+			wantErr: true,
+		},
 	}
 
-	// Create a temp file
-	file, err := os.CreateTemp(dir, "testfile")
-	if err != nil {
-		t.Fatalf("Unable to create temp file: %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := MustExists(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MustExists() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
-	filePath := file.Name()
-	file.Close()
+}
 
-	// File should exist
-	if !MustExists(filePath) {
-		t.Errorf("Expected file %s to exist", filePath)
+func TestMustNotExists(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create a file inside temp dir
+	file := filepath.Join(dir, "file.txt")
+	if err := os.WriteFile(file, []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
 	}
 
-	// Remove file and check again
-	if err := os.Remove(filePath); err != nil {
-		t.Fatalf("Unable to remove temp file: %v", err)
+	nonExistent := filepath.Join(dir, "notexists")
+
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+	}{
+		{
+			name:    "directory exists",
+			path:    dir,
+			wantErr: true,
+		},
+		{
+			name:    "file exists",
+			path:    file,
+			wantErr: true,
+		},
+		{
+			name:    "path does not exist",
+			path:    nonExistent,
+			wantErr: false,
+		},
 	}
-	if MustExists(filePath) {
-		t.Errorf("Expected removed file %s to NOT exist", filePath)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := MustNotExists(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MustNotExists() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }
